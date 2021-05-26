@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weather App</title>
+  <style>
+    body {
+      font-family: sans-serif;
+    }
+    .container {
+      margin: 0 auto;
+      max-width: 768px;
+    }
+    .container h1 {
+      text-align: center;
+    }
+
+    form {
+      border: 1px solid red;
+      margin: 0 auto;
+      max-width: 75%;
+    }
+
+    form div {
+      margin: 0 auto;
+      max-width: 75%;
+    }
+
+    form div:not(:last-of-type) {
+      border: 1px solid green;
+      margin-bottom: 1em;
+    }
+
+    form .error-message {
+      display: block;
+      text-align: left;
+      font-size: smaller;
+      color: red;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Weather App</h1>
+
+    <form novalidate>
+      <div>
+        <input
+          type="text"
+          data-template="apiKey"
+          placeholder="API Key"
+          required="required"
+          oninput="validate(templateData, this.value, 'apiKeyError')"
+        >
+        <span class="error-message" data-template="apiKeyError"></span>
+      </div>
+      <div>
+        <input
+          type="text"
+          data-template="countryCode"
+          placeholder="Country Code"
+          required
+          oninput="validateCountryCode(templateData, this.value, 'countryCodeError')"
+        >
+        <span class="error-message" data-template="countryCodeError"></span>
+      </div>
+      <div>
+        <input
+          type="text"
+          data-template="city"
+          placeholder="City"
+          oninput="validate(templateData, this.value, 'cityError')"
+        >
+        <span class="error-message" data-template="cityError"></span>
+      </div>
+      <div>
+        <input type="submit" value="Submit">
+      </div>
+    </form>
+
+    <div>
+      <h2>Wind:</h2>
+      <p data-template="wind"></p>
+
+      <h2>Weather:</h2>
+      <p data-template="weather"></p>
+
+      <h2>Main:</h2>
+      <p data-template="main"></p>
+    </div>
+  </div>
+  <script>
+    async function getWeather({ apiKey, city, countryCode }) {;
+      const query = `${city},${countryCode}&appid=${apiKey}`;
+      const url = `https://api.openweathermap.org/data/2.5/weather?q=${query}`;
+      const response = await fetch(url);
+      console.log(response.status === 404);
+      return response.ok
+        ? await response.json()
+        : {
+            errorMessage: response.status === 404
+              ? 'Could not find country or city'
+              : 'An error occured'
+          };
+    }
+
+    // (async function () {
+    //   const currentData = await getWeather({ city: 'Lagos', countryCode: 'NG' });
+    //   const { errorMessage, wind, weather, main } = currentData;
+
+    //   if (errorMessage) {
+    //     console.error(errorMessage);
+    //     return;
+    //   }
+
+
+    // })();
+
+    function createDOMBinding(initial) {
+      const templateData = {};
+      
+      Object.entries(initial).forEach(([k, v]) => {
+        const selector = `[data-template="${k}"]`;
+        const el = document.querySelector(selector);
+
+        if (!el) {
+          throw new Error(`${selector} not found`);
+        }
+
+        let internalVal = v;
+
+        if (el.value !== undefined) {
+          el.value = v;
+          el.addEventListener('input', function() {
+            internalVal = this.value
+          });
+        } else {
+          el.textContent = v;
+        }
+        
+        Object.defineProperty(templateData, k, {
+          enumerable: true,
+          configurable: true,
+          get() {
+            return internalVal;
+          },
+          set(newVal) {
+            internalVal = newVal;
+            
+            if (el.value === undefined) {
+              el.textContent = newVal;
+            } else {
+              el.value = newVal;
+            }
+          },
+        });
+      });
+
+      return templateData;
+    }
+
+    function validateCountryCode(data, val, errorPropName) {
+      if (!validate(data, val, errorPropName)) {
+        return false;
+      }
+
+      if (val.length !== 2) {
+        data[errorPropName] = 'Invalid country code';
+        return false;
+      }
+
+      return true;
+    }
+
+    function validate(data, val, errorPropName) {
+      if (!val) {
+        data[errorPropName] = 'Required';
+        return false;
+      }
+
+      data[errorPropName] = '';
+      return true;
+    }
+
+    const templateData = createDOMBinding({
+      countryCode: '',
+      city: '',
+      countryCodeError: '',
+      cityError: '',
+      wind: '',
+      weather: '',
+      main: '',
+      apiKey: '',
+      apiKeyError: '',
+    });
+
+    const form = document.querySelector('form');
+
+    form.onsubmit = async function (event) {
+      event.preventDefault();
+      
+      const { apiKey, city, countryCode } = templateData;
+
+      const apiKeyValid = validate(templateData, apiKey, 'apiKeyError');
+
+      const countryCodeValid = validateCountryCode(
+        templateData,
+        countryCode,
+        'countryCodeError'
+      );
+      const cityValid = validate(
+        templateData,
+        city,
+        'cityError'
+      );
+
+      if (!apiKeyValid || !countryCodeValid || !cityValid) {
+        return;
+      }
+
+      console.log('here we go');
+      const currentData = await getWeather({ apiKey, city, countryCode });
+      console.log(currentData);
+      const { errorMessage, wind, weather, main } = currentData;
+      templateData.wind = JSON.stringify(wind);
+      templateData.weather = JSON.stringify(weather);
+      templateData.main = JSON.stringify(main);
+    };
+  </script>
+</body>
+</html>
