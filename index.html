@@ -80,7 +80,7 @@
       </div>
     </form>
 
-    <div>
+    <div class="stats-section" data-show="showStats">
       <h2>Wind:</h2>
       <p data-template="wind"></p>
 
@@ -90,7 +90,16 @@
       <h2>Main:</h2>
       <p data-template="main"></p>
     </div>
+
+    <div class="loading-section" data-show="loading">
+      Loading...
+    </div>
+
+    <div class="error-section" data-show="showError">
+      <h3 class="error-message" data-template="errorMessage"></h3>
+    </div>
   </div>
+  <script src="helpers.js"></script>
   <script>
     async function getWeather({ apiKey, city, countryCode }) {;
       const query = `${city},${countryCode}&appid=${apiKey}`;
@@ -117,49 +126,6 @@
 
 
     // })();
-
-    function createDOMBinding(initial) {
-      const templateData = {};
-      
-      Object.entries(initial).forEach(([k, v]) => {
-        const selector = `[data-template="${k}"]`;
-        const el = document.querySelector(selector);
-
-        if (!el) {
-          throw new Error(`${selector} not found`);
-        }
-
-        let internalVal = v;
-
-        if (el.value !== undefined) {
-          el.value = v;
-          el.addEventListener('input', function() {
-            internalVal = this.value
-          });
-        } else {
-          el.textContent = v;
-        }
-        
-        Object.defineProperty(templateData, k, {
-          enumerable: true,
-          configurable: true,
-          get() {
-            return internalVal;
-          },
-          set(newVal) {
-            internalVal = newVal;
-            
-            if (el.value === undefined) {
-              el.textContent = newVal;
-            } else {
-              el.value = newVal;
-            }
-          },
-        });
-      });
-
-      return templateData;
-    }
 
     function validateCountryCode(data, val, errorPropName) {
       if (!validate(data, val, errorPropName)) {
@@ -194,6 +160,10 @@
       main: '',
       apiKey: '',
       apiKeyError: '',
+      loading: false,
+      showStats: false,
+      showError: false,
+      errorMessage: '',
     });
 
     const form = document.querySelector('form');
@@ -220,13 +190,24 @@
         return;
       }
 
-      console.log('here we go');
+      templateData.loading = true;
+      templateData.showStats = false;
+      templateData.errorMessage = '';
       const currentData = await getWeather({ apiKey, city, countryCode });
-      console.log(currentData);
+      templateData.loading = false;
       const { errorMessage, wind, weather, main } = currentData;
-      templateData.wind = JSON.stringify(wind);
-      templateData.weather = JSON.stringify(weather);
-      templateData.main = JSON.stringify(main);
+
+      templateData.showError = !!errorMessage;
+
+      if (errorMessage) {
+        templateData.showStats = false;
+        templateData.errorMessage = errorMessage;
+      } else {
+        templateData.wind = JSON.stringify(wind);
+        templateData.weather = JSON.stringify(weather);
+        templateData.main = JSON.stringify(main);
+        templateData.showStats = true;
+      }
     };
   </script>
 </body>
