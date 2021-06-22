@@ -49,7 +49,7 @@
       <div>
         <input
           type="text"
-          data-template="apiKey"
+          data-input="apiKey"
           placeholder="API Key"
           required="required"
           oninput="validate(templateData, this.value, 'apiKeyError')"
@@ -59,7 +59,7 @@
       <div>
         <input
           type="text"
-          data-template="countryCode"
+          data-input="countryCode"
           placeholder="Country Code"
           required
           oninput="validateCountryCode(templateData, this.value, 'countryCodeError')"
@@ -69,7 +69,7 @@
       <div>
         <input
           type="text"
-          data-template="city"
+          data-input="city"
           placeholder="City"
           oninput="validate(templateData, this.value, 'cityError')"
         >
@@ -80,7 +80,7 @@
       </div>
     </form>
 
-    <div class="stats-section" data-show="showStats">
+    <div class="stats-section" data-bool="showStats">
       <h2>Wind:</h2>
       <p data-template="wind"></p>
 
@@ -91,122 +91,64 @@
       <p data-template="main"></p>
     </div>
 
-    <div class="loading-section" data-show="loading">
+    <div class="loading-section" data-bool="loading">
       Loading...
     </div>
 
-    <div class="error-section" data-show="showError">
+    <div class="error-section" data-bool="showError">
       <h3 class="error-message" data-template="errorMessage"></h3>
     </div>
   </div>
-  <script src="helpers.js"></script>
+  <script src="dom.js"></script>
+  <script src="form.js"></script>
+  <script src="api.js"></script>
   <script>
-    async function getWeather({ apiKey, city, countryCode }) {;
-      const query = `${city},${countryCode}&appid=${apiKey}`;
-      const url = `https://api.openweathermap.org/data/2.5/weather?q=${query}`;
-      const response = await fetch(url);
-      console.log(response.status === 404);
-      return response.ok
-        ? await response.json()
-        : {
-            errorMessage: response.status === 404
-              ? 'Could not find country or city'
-              : 'An error occured'
-          };
-    }
-
-    // (async function () {
-    //   const currentData = await getWeather({ city: 'Lagos', countryCode: 'NG' });
-    //   const { errorMessage, wind, weather, main } = currentData;
-
-    //   if (errorMessage) {
-    //     console.error(errorMessage);
-    //     return;
-    //   }
-
-
-    // })();
-
-    function validateCountryCode(data, val, errorPropName) {
-      if (!validate(data, val, errorPropName)) {
-        return false;
-      }
-
-      if (val.length !== 2) {
-        data[errorPropName] = 'Invalid country code';
-        return false;
-      }
-
-      return true;
-    }
-
-    function validate(data, val, errorPropName) {
-      if (!val) {
-        data[errorPropName] = 'Required';
-        return false;
-      }
-
-      data[errorPropName] = '';
-      return true;
-    }
-
-    const templateData = createDOMBinding({
-      countryCode: '',
-      city: '',
+    const templateData = createTemplateBinding({
       countryCodeError: '',
       cityError: '',
+      apiKeyError: '',
+      errorMessage: '',
       wind: '',
       weather: '',
       main: '',
+    });
+
+    const inputData = createInputBinding({
+      countryCode: '',
+      city: '',
       apiKey: '',
-      apiKeyError: '',
+    });
+
+    const booleanData = createBooleanBinding({
       loading: false,
       showStats: false,
       showError: false,
-      errorMessage: '',
     });
 
-    const form = document.querySelector('form');
-
-    form.onsubmit = async function (event) {
+    document.querySelector('form').onsubmit = async function (event) {
       event.preventDefault();
-      
-      const { apiKey, city, countryCode } = templateData;
 
-      const apiKeyValid = validate(templateData, apiKey, 'apiKeyError');
-
-      const countryCodeValid = validateCountryCode(
-        templateData,
-        countryCode,
-        'countryCodeError'
-      );
-      const cityValid = validate(
-        templateData,
-        city,
-        'cityError'
-      );
-
-      if (!apiKeyValid || !countryCodeValid || !cityValid) {
+      if (checkForErrors(inputData)) {
         return;
       }
 
-      templateData.loading = true;
-      templateData.showStats = false;
+      booleanData.loading = true;
+      booleanData.showStats = false;
       templateData.errorMessage = '';
       const currentData = await getWeather({ apiKey, city, countryCode });
-      templateData.loading = false;
+      booleanData.loading = false;
       const { errorMessage, wind, weather, main } = currentData;
 
-      templateData.showError = !!errorMessage;
+      booleanData.showError = !!errorMessage;
 
       if (errorMessage) {
-        templateData.showStats = false;
+        booleanData.showStats = false;
         templateData.errorMessage = errorMessage;
       } else {
         templateData.wind = JSON.stringify(wind);
         templateData.weather = JSON.stringify(weather);
         templateData.main = JSON.stringify(main);
-        templateData.showStats = true;
+        booleanData.showStats = true;
       }
     };
   </script>
