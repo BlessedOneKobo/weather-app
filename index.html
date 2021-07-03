@@ -18,9 +18,9 @@
     }
 
     form {
-      border: 1px solid red;
       margin: 0 auto;
       max-width: 75%;
+      text-align: center;
     }
 
     form div {
@@ -29,7 +29,6 @@
     }
 
     form div:not(:last-of-type) {
-      border: 1px solid green;
       margin-bottom: 1em;
     }
 
@@ -38,6 +37,11 @@
       text-align: left;
       font-size: smaller;
       color: red;
+    }
+
+    .loading-section,
+    .stats-section {
+      text-align: center;
     }
   </style>
 </head>
@@ -92,7 +96,7 @@
     </div>
 
     <div class="loading-section" data-bool="loading">
-      Loading...
+      <h3>Loading...</h3>
     </div>
 
     <div class="error-section" data-bool="showError">
@@ -125,12 +129,16 @@
       showError: false,
     });
 
+    const getFahrenheitTemp = (temp) => temp * 9/5 + 32;
+
     document.querySelector('form').onsubmit = async function (event) {
       event.preventDefault();
 
       if (checkForErrors(inputData)) {
         return;
       }
+
+      const { apiKey, city, countryCode } = inputData;
 
       booleanData.loading = true;
       booleanData.showStats = false;
@@ -144,12 +152,17 @@
       if (errorMessage) {
         booleanData.showStats = false;
         templateData.errorMessage = errorMessage;
-      } else {
-        templateData.wind = JSON.stringify(wind);
-        templateData.weather = JSON.stringify(weather);
-        templateData.main = JSON.stringify(main);
-        booleanData.showStats = true;
+        return;
       }
+
+
+      templateData.wind = `${wind.speed}km/h`;
+      templateData.weather = `${weather[0].description.toUpperCase()}`;
+      templateData.main = `
+        temperature: ${main.temp}C (${getFahrenheitTemp(main.temp).toFixed(2)} F) degrees,
+        humidity: ${main.humidity}%
+      `;
+      booleanData.showStats = true;
     };
   </script>
 </body>
