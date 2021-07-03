@@ -1,8 +1,7 @@
 async function getWeather({ apiKey, city, countryCode }) {
-  const query = `${city},${countryCode}&appid=${apiKey}`;
+  const query = `${city},${countryCode}&appid=${apiKey}&units=metric`;
   const url = `https://api.openweathermap.org/data/2.5/weather?q=${query}`;
   const response = await fetch(url);
-  console.log(response.status === 404);
   return response.ok
     ? await response.json()
     : {
