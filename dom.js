@@ -62,6 +62,14 @@ function createInputBinding(initialData) {
 }
 
 function createBooleanBinding(initialData) {
+  const initialDisplayValue = { ...initialData };
+  Object.keys(initialDisplayValue).forEach((key) => {
+    const el = document.querySelector("[data-bool]");
+    initialDisplayValue[key] = window
+      .getComputedStyle(el)
+      .getPropertyValue("display");
+  });
+
   return createDomBinding({
     initialData,
     bindingPrefix: "bool",
@@ -76,7 +84,7 @@ function createBooleanBinding(initialData) {
     },
     setDomValue: ({ value, el }) => {
       if (value) {
-        el.style.display = "unset";
+        el.style.display = initialDisplayValue[el.getAttribute("data-bool")];
       } else {
         el.style.display = "none";
       }
