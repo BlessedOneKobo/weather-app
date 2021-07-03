@@ -62,8 +62,8 @@ function createInputBinding(initialData) {
 }
 
 function createBooleanBinding(initialData) {
-  const initialDisplayValue = { ...initialData };
-  Object.keys(initialDisplayValue).forEach((key) => {
+  const initialDisplayValue = {};
+  Object.keys(initialData).forEach((key) => {
     const el = document.querySelector("[data-bool]");
     initialDisplayValue[key] = window
       .getComputedStyle(el)
